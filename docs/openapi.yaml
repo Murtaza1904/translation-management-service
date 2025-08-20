@@ -1,0 +1,58 @@
+openapi: 3.0.3
+info:
+  title: Translation Service API
+  version: 1.0.0
+servers:
+  - url: https://api.example.com
+security:
+  - bearerAuth: []
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+paths:
+  /api/translations:
+    get:
+      summary: List and search translations
+      parameters:
+        - in: query
+          name: locale
+          schema: { type: string }
+        - in: query
+          name: tag
+          schema: { type: string }
+        - in: query
+          name: key
+          schema: { type: string }
+        - in: query
+          name: search
+          schema: { type: string }
+        - in: query
+          name: namespace
+          schema: { type: string }
+      responses:
+        '200': { description: OK }
+    post:
+      summary: Create or upsert translation
+      responses:
+        '201': { description: Created }
+  /api/translations/{id}:
+    get:
+      summary: Show translation
+      responses:
+        '200': { description: OK }
+    put:
+      summary: Update translation
+      responses:
+        '200': { description: OK }
+    delete:
+      summary: Delete translation
+      responses:
+        '204': { description: No Content }
+  /api/export/{locale}:
+    get:
+      summary: Stream JSON bundle for a locale
+      responses:
+        '200': { description: OK }
+        '304': { description: Not Modified }
