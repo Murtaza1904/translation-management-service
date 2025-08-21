@@ -6,6 +6,7 @@ namespace App\Models;
 
 use Illuminate\Support\Carbon;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
@@ -27,8 +28,8 @@ final class Locale extends Model
      * @var list<string>
      */
     protected $fillable = [
-        'code',
         'name',
+        'code',
     ];
 
     /**
@@ -39,5 +40,22 @@ final class Locale extends Model
     public function translations(): HasMany
     {
         return $this->hasMany(Translation::class);
+    }
+
+    /**
+     * Scope a query to search translations by key or value.
+     *
+     * @param Builder $query
+     * @param ?string $search
+     * @return void
+     */
+    public static function scopeSearch(Builder $query, ?string $search = null): void
+    {
+        if (isset($search)) {
+            $query->where(function (Builder $q) use ($search) {
+                $q->where('code', $search)
+                ->orWhere('name', $search);
+            });
+        }
     }
 }

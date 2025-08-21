@@ -25,6 +25,8 @@ final class TranslationRequest extends FormRequest
     {
         return [
             'value' => ['required', 'string'],
+            'locale' => [$this->isMethod('POST') ? 'required' : 'nullable', 'string', 'exists:locales,code'],
+            'key' => [$this->isMethod('POST') ? 'required' : 'nullable', 'string', 'max:255', 'unique:translations,key'],
             'namespace' => ['nullable', 'string', 'max:64'],
             'tags' => ['array'],
             'tags.*' => ['string', 'exists:tags,name'],

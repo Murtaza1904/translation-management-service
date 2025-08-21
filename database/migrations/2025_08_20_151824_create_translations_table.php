@@ -24,7 +24,8 @@ return new class () extends Migration {
         });
 
         Schema::table('translations', function (Blueprint $table): void {
-            $table->fullText(['key', 'value']);
+            $table->fullText('key');
+            $table->fullText('value');
         });
     }
 

@@ -1,9 +1,11 @@
-openapi: 3.0.3
+openapi: 3.0.4
 info:
   title: Translation Service API
   version: 1.0.0
+  description: API for managing translations in a translation management service.
 servers:
-  - url: https://api.example.com
+  - url: http://translation-management-service.test
+    description: Local development server
 security:
   - bearerAuth: []
 components:
@@ -11,9 +13,136 @@ components:
     bearerAuth:
       type: http
       scheme: bearer
+tags:
+  - name: Authentication
+    description: Endpoints for user authentication
+  - name: Locales
+    description: Endpoints for managing locales
+  - name: Translations
+    description: Endpoints for managing translations
 paths:
-  /api/translations:
+  # Authentication Endpoints
+  /api/v1/auth/register:
+    post:
+      tags: [Authentication]
+      summary: Register user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  format: password
+                password_confirmation:
+                  type: string
+                  format: password
+      responses:
+        '200': { description: OK }
+  /api/v1/auth/login:
+    post:
+      tags: [Authentication]
+      summary: Login user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  format: password
+      responses:
+        '200': { description: OK }
+  /api/v1/auth/logout:
+    post:
+      tags: [Authentication]
+      summary: Logout user
+      responses:
+        '200': { description: OK }
+
+  # Locale Endpoints
+  /api/v1/locales:
     get:
+      tags: [Locales]
+      summary: List and search locales
+      parameters:
+        - in: query
+          name: search
+          schema: { type: string }
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: per_page
+          schema: { type: integer, default: 15 }
+      responses:
+        '200': { description: OK }
+    post:
+      tags: [Locales]
+      summary: Create or upsert locale
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code:
+                  type: string
+                name:
+                  type: string
+      responses:
+        '201': { description: Created }
+  /api/v1/locales/{id}:
+    parameters:
+    - in: path
+      name: id
+      required: true
+      schema:
+        type: integer
+    get:
+      tags: [Locales]
+      summary: Show locale
+      responses:
+        '200': { description: OK }
+    put:
+      tags: [Locales]
+      summary: Update locale
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code:
+                  type: string
+                name:
+                  type: string
+      responses:
+        '200': { description: OK }
+    delete:
+      tags: [Locales]
+      summary: Delete locale
+      responses:
+        '200': { description: OK }
+  
+  # Translation Endpoints
+  /api/v1/translations:
+    get:
+      tags: [Translations]
       summary: List and search translations
       parameters:
         - in: query
@@ -23,36 +152,79 @@ paths:
           name: tag
           schema: { type: string }
         - in: query
-          name: key
+          name: namespace
           schema: { type: string }
         - in: query
           name: search
           schema: { type: string }
         - in: query
-          name: namespace
-          schema: { type: string }
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: per_page
+          schema: { type: integer, default: 15 }
       responses:
         '200': { description: OK }
     post:
+      tags: [Translations]
       summary: Create or upsert translation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                key:
+                  type: string
+                  uniqueItems: true
+                value:
+                  type: string
+                locale:
+                  type: string
+                  description: Must be a valid existing locale code
+                namespace:
+                  type: string
+                tags:
+                  type: array
+                  items:
+                    type: string
+                    description: Must be a valid existing tag code
       responses:
         '201': { description: Created }
-  /api/translations/{id}:
+  /api/v1/translations/{id}:
+    parameters:
+    - in: path
+      name: id
+      required: true
+      schema:
+        type: integer
     get:
+      tags: [Translations]
       summary: Show translation
       responses:
         '200': { description: OK }
     put:
+      tags: [Translations]
       summary: Update translation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                value:
+                  type: string
+                tags:
+                  type: array
+                  items:
+                    type: string
+                    description: Must be a valid existing tag code
       responses:
         '200': { description: OK }
     delete:
+      tags: [Translations]
       summary: Delete translation
       responses:
-        '204': { description: No Content }
-  /api/export/{locale}:
-    get:
-      summary: Stream JSON bundle for a locale
-      responses:
         '200': { description: OK }
-        '304': { description: Not Modified }

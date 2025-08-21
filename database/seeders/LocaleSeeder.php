@@ -13,7 +13,7 @@ final class LocaleSeeder extends Seeder
      * Run the database seeds.
      */
     public function run(): void
-    {        
+    {
         $locales = [
             ['name' => 'English', 'code' => 'en'],
             ['name' => 'French',  'code' => 'fr'],

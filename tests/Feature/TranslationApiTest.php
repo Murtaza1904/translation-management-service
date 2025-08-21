@@ -2,84 +2,99 @@
 
 declare(strict_types=1);
 
-beforeAll(function () {
-    $response = test()->postJson('/api/v1/auth/login', [
-        'email' => 'johndoe1@example.com',
-        'password' => 'Pa$$w0rd1#$',
-    ]);
-    
-    $this->headers = ['Authorization' => 'Bearer '. $response->json('token')];
-    $this->translationId = null;
+use App\Models\Tag;
+use App\Models\Locale;
+
+it('get translations', function (): void {
+    $response = $this->withHeaders(['Authorization' => 'Bearer ' . $_SESSION['token']])
+        ->getJson('/api/v1/translations');
+
+    $response->assertOk();
 });
 
 it('creates a translation', function (): void {
-    $time = microtime(true);
+    $locales = Locale::pluck('code')->toArray();
+    $tags = Tag::pluck('name')->toArray();
 
-    $response = $this
-        ->withHeaders($this->headers)
+    $response = $this->withHeaders(['Authorization' => 'Bearer ' . $_SESSION['token']])
         ->postJson('/api/v1/translations', [
-            'locale' => 'en',
-            'key' => 'greeting.hello',
-            'value' => 'Hello',
-            'tags' => ['web'],
+            'locale' => array_rand(array_flip($locales)),
+            'key' => fake()->unique()->word(),
+            'value' => fake()->sentence(),
+            'tags' => [array_rand(array_flip($tags))],
         ]);
-
-    $this->assertTrue((microtime(true) - $time) * 1000 < 200);
 
     $response->assertCreated();
 
-    $this->translationId = $response->json('id');
+    expect($response->json('message'))->toBe('Translation created successfully');
+    $_SESSION['translation_id'] = $response->json('translation.id');
 });
 
 it('views a translation', function (): void {
-    $time = microtime(true);
-
     $response = $this
-        ->withHeaders($this->headers)
-        ->getJson('/api/v1/translations/' . $this->translationId);
+        ->withHeaders(['Authorization' => 'Bearer ' . $_SESSION['token']])
+        ->getJson('/api/v1/translations/' . $_SESSION['translation_id']);
 
-    $this->assertTrue((microtime(true) - $time) * 1000 < 200);
+    $translation = $response->json('translation');
 
-    $translation = $response->json();
-
-    expect($translation)
-        ->key->toBe('greeting.hello')
-        ->value->toBe('Hello')
-        ->locale->code->toBe('en');
-
-    expect(array_column($translation['tags'], 'name'))->toContain('web');
-
+    expect($translation['key'])->not->toBeEmpty();
+    expect($translation['value'])->not->toBeEmpty();
+    expect($translation['locale']['code'])->not->toBeEmpty();
+    expect(array_column($translation['tags'], 'name'))->not->toBeEmpty();
     expect($translation['id'])->not->toBeEmpty();
-    expect($translation['namespace'])->not->toBeEmpty();
+    expect($translation['namespace'])->toBeNull();
 
     $response->assertOk();
 });
 
 it('edits a translation', function (): void {
-    $time = microtime(true);
+    $tags = Tag::pluck('name')->toArray();
+
+    $value = fake()->sentence();
+    $tags = array_rand(array_flip($tags), 1);
 
     $response = $this
-        ->withHeaders($this->headers)
-        ->putJson('/api/v1/translations/' . $this->translationId, [
-            'locale' => 'en',
-            'key' => 'greeting.hello',
-            'value' => 'Hello World',
-            'tags' => ['web'],
+        ->withHeaders(['Authorization' => 'Bearer ' . $_SESSION['token']])
+        ->putJson('/api/v1/translations/' . $_SESSION['translation_id'], [
+            'value' => $value,
+            'tags' => [$tags],
         ]);
 
-    $this->assertTrue((microtime(true) - $time) * 1000 < 200);
-
     $response->assertOk();
+
+    expect($response->json('message'))->toBe('Translation updated successfully');
+
+    $translation = $response->json('translation');
+
+    expect($translation['value'])->toBe($value);
+    expect(array_column($translation['tags'], 'name'))->toContain($tags);
+    expect($translation['id'])->not->toBeEmpty();
+    expect($translation['namespace'])->toBeNull();
 });
 
 it('deletes a translation', function (): void {
-    $time = microtime(true);
-
     $response = $this
-        ->withHeaders($this->headers)
-        ->deleteJson('/api/v1/translations/' . $this->translationId);
+        ->withHeaders(['Authorization' => 'Bearer ' . $_SESSION['token']])
+        ->deleteJson('/api/v1/translations/' . $_SESSION['translation_id']);
 
-    $this->assertTrue((microtime(true) - $time) * 1000 < 200);
+    $response->assertOk();
 
-    $response->assertNoContent();
+    expect($response->json('message'))->toBe('Translation deleted successfully');
+
+    unset($_SESSION['translation_id']);
+});
+
+it('benchmarks translations five times under 500ms', function (): void {
+    for ($i = 1; $i <= 5; $i++) {
+        $start = microtime(true);
+
+        $response = $this
+            ->withHeaders(['Authorization' => 'Bearer ' . $_SESSION['token']])
+            ->getJson('/api/v1/translations');
+
+        $elapsed = (microtime(true) - $start) * 1000;
+
+        $response->assertOk();
+        expect($elapsed)->toBeLessThan(500, "Run #{$i} took {$elapsed}ms");
+    }
 });

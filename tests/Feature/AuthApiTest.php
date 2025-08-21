@@ -2,47 +2,51 @@
 
 declare(strict_types=1);
 
-beforeAll(function () {
-    $this->token = null;
-    $this->headers = [];
-});
-
 it('can register', function (): void {
+    $name = fake()->name();
+    $email = fake()->email();
+
     $response = $this->postJson('/api/v1/auth/register', [
-        'name' => 'John Doe',
-        'email' => fake()->email(),
+        'name' => $name,
+        'email' => $email,
         'password' => 'Pa$$w0rd1#$',
         'password_confirmation' => 'Pa$$w0rd1#$',
     ]);
 
     $response->assertStatus(201);
 
-    $this->token = $response->json('token');
-    $this->headers = ['Authorization' => 'Bearer ' . $this->token];
+    expect($response->json('token'))->not->toBeNull();
+    expect($response->json('message'))->toBe('User registered successfully');
+    expect($response->json('user'))
+        ->name->toBe($name)
+        ->email->toBe($email);
 
-    expect($this->token)->not->toBeNull();
+    $_SESSION['token'] = $response->json('token');
 });
 
 it('can logout', function (): void {
     $response = $this
-        ->withHeaders($this->headers)
+        ->withHeaders(['Authorization' => 'Bearer ' . $_SESSION['token']])
         ->postJson('/api/v1/auth/logout');
 
-    $response->assertStatus(200);
+    $response->assertOk();
 
     expect($response->json('message'))->toBe('Logged out successfully');
 });
 
 it('can login', function (): void {
     $response = $this->postJson('/api/v1/auth/login', [
-        'email' => 'johndoe1@example.com',
+        'email' => 'johndoe@example.com',
         'password' => 'Pa$$w0rd1#$',
     ]);
 
-    $response->assertStatus(200);
+    $response->assertOk();
 
-    $this->token = $response->json('token');
-    $this->headers = ['Authorization' => 'Bearer ' . $this->token];
+    expect($response->json('token'))->not->toBeNull();
+    expect($response->json('user'))->not->toBeNull();
+    expect($response->json('user'))
+        ->name->toBe('John Doe')
+        ->email->toBe('johndoe@example.com');
 
-    expect($this->token)->not->toBeNull();
+    $_SESSION['token'] = $response->json('token');
 });

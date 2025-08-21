@@ -1,7 +1,7 @@
 # Translation Management Service
 
 An API-driven Laravel service for managing multilingual translations at scale.  
-Supports CRUD operations, tagging, locale exports, and token-based authentication.  
+Supports CRUD operations, tagging, locales, and token-based authentication.  
 Designed for high performance (<200 ms per request, JSON export <500 ms with 100k+ records).
 
 ---
@@ -11,21 +11,20 @@ Designed for high performance (<200 ms per request, JSON export <500 ms with 100
 - Tag translations by context (`web`, `mobile`, `desktop`).
 - REST API for create, update, view, search.
 - JSON export endpoint for frontend apps (Vue, React, etc).
-- Token-based authentication (Bearer tokens).
+- Token-based authentication (Bearer tokens) using sanctum.
 - Scalable database schema with indexes and full-text search.
 - Seeder to generate 100k+ translations for performance testing.
-- Docker setup (Nginx + PHP-FPM + MySQL + Redis).
-- Redis caching with ETag and cache-tag invalidation.
+- Docker setup (Nginx + MySQL).
 - OpenAPI (Swagger) docs included.
 - PHPUnit tests for functionality and performance.
 
 ---
 
 ## Requirements
+- Laravel 12+
 - PHP 8.3+
 - Composer
 - MySQL 8
-- Redis 7
 - Docker (optional)
 
 ---
@@ -72,16 +71,29 @@ Authorization: Bearer <token>
 ```
 
 ## Endpoints
+
+Authentication
+- `POST /api/v1/auth/register` — Register user
+- `POST /api/v1/auth/login` — Login user
+- `POST /api/v1/auth/logout` — Logout user
+
+Locales
+- `GET /api/v1/locales` — list/search locales
+- `POST /api/v1/locales` — create locale
+- `GET /api/v1/locales/{id}` — view locale
+- `PUT /api/v1/locales/{id}` — update locale
+- `DELETE /api/v1/locales/{id}` — delete locale
+
+Translation
 - `GET /api/v1/translations` — list/search translations
 - `POST /api/v1/translations` — create translation
 - `GET /api/v1/translations/{id}` — view translation
 - `PUT /api/v1/translations/{id}` — update translation
 - `DELETE /api/v1/translations/{id}` — delete translation
-- `GET /api/v1/export/{locale}` — stream JSON export
 
 ### Example request
 ```
-    curl -H "Authorization: Bearer <token>" http://localhost:8080/api/v1/export/en
+    curl -H "Authorization: Bearer <token>" http://localhost:8080/api/v1/translations
 ```
 
 ## Testing
@@ -98,7 +110,7 @@ php artisan test
 - Cache behavior
 
 ## API Documentation
-OpenAPI (Swagger) spec is available at: docs/openapi.yaml
+OpenAPI (Swagger) spec is available at: `docs/openapi.yaml`
 
 You can visualize it using [Swagger UI](https://swagger.io/tools/swagger-ui/)
     
@@ -110,7 +122,6 @@ or import it into [Postman](https://www.postman.com/).
 - Schema: Translations normalized into locales, translations, tags.
 - Performance:
 - Indexed keys and full-text search.
-- Export implemented as streamed response with chunked DB reads.
-- Redis tag cache + ETag ensures CDN-friendly and always-fresh responses.
-- Security: Token-based authentication with hashed storage.
-- Scalability: Tested with 100k+ translations, export <500 ms.
+- Optimized queries and always-fresh responses.
+- Security: Token-based authentication using sanctum.
+- Scalability: Tested with 100k+ translations < 500 ms.

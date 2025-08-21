@@ -25,6 +25,10 @@ final class TranslationSeeder extends Seeder
 
         $batches = (int) ceil($count / $chunk);
 
+        $this->command->info("Seeding {$count} translations in {$batches} batches...");
+        $bar = $this->command->getOutput()->createProgressBar($batches);
+        $bar->start();
+
         for ($i = 0; $i < $batches; $i++) {
             $toMake = min($chunk, $count - ($i * $chunk));
 
@@ -34,10 +38,18 @@ final class TranslationSeeder extends Seeder
                 ->toArray();
 
             Translation::insert($rows);
+
+            $bar->advance();
         }
+
+        $bar->finish();
+
+        $this->command->newLine();
+        $this->command->info("Attaching tags to translations...");
 
         $translationIds = Translation::pluck('id')->all();
         $pairs = [];
+
         foreach ($translationIds as $id) {
             $pairs[] = [
                 'translation_id' => $id,
@@ -45,8 +57,16 @@ final class TranslationSeeder extends Seeder
             ];
         }
 
-        foreach (array_chunk($pairs, 5000) as $c) {
+        $chunks = array_chunk($pairs, 5000);
+        $bar = $this->command->getOutput()->createProgressBar(count($chunks));
+        $bar->start();
+
+        foreach ($chunks as $c) {
             DB::table('tag_translation')->insert($c);
+            $bar->advance();
         }
+
+        $bar->finish();
+        $this->command->newLine();
     }
 }

@@ -90,20 +90,6 @@ final class Translation extends Model
     }
 
     /**
-     * Scope a query to only include translations with a specific key.
-     *
-     * @param Builder $query
-     * @param ?string $key
-     * @return void
-     */
-    public static function scopeWithKey(Builder $query, ?string $key = null): void
-    {
-        if (isset($key)) {
-            $query->where('key', $key);
-        }
-    }
-
-    /**
      * Scope a query to only include translations with a specific namespace.
      *
      * @param Builder $query
@@ -126,11 +112,11 @@ final class Translation extends Model
      */
     public static function scopeSearch(Builder $query, ?string $term = null): void
     {
-        // if (isset($term)) {
-        //     $query->where(function (Builder $q) use ($term) {
-        //         $q->whereFullText('key', $term)
-        //         ->orWhereFullText('value', $term);
-        //     });
-        // }
+        if (isset($term)) {
+            $query->where(function (Builder $q) use ($term) {
+                $q->whereFullText('key', $term)
+                ->orWhereFullText('value', $term);
+            });
+        }
     }
 }

@@ -16,13 +16,19 @@ final class TranslationResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        unset($request);
+
         return [
             'id' => $this->id,
             'key' => $this->key,
             'value' => $this->value,
             'namespace' => $this->namespace,
-            'locale' => new LocaleResource($this->whenLoaded('locale')),
-            'tags' => TagResource::collection($this->whenLoaded('tags')),
+            $this->mergeWhen($this->whenLoaded('locale') && isset($this->locale), [
+                'locale' => new LocaleResource($this->locale),
+            ]),
+            $this->mergeWhen($this->whenLoaded('tags') && $this->tags->isNotEmpty(), [
+                'tags' => TagResource::collection($this->tags),
+            ]),
         ];
     }
 }

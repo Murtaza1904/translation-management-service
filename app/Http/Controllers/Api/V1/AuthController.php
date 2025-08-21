@@ -11,6 +11,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Requests\Api\V1\Auth\LoginRequest;
 use App\Http\Requests\Api\V1\Auth\RegisterRequest;
+use App\Http\Resources\Api\V1\Auth\UserResource;
 
 final class AuthController extends Controller
 {
@@ -19,6 +20,8 @@ final class AuthController extends Controller
         $user = User::create($registerRequest->validated());
 
         return response()->json([
+            'message' => 'User registered successfully',
+            'user' => new UserResource($user),
             'token' => $user->createToken('auth_token')->plainTextToken,
         ], 201);
     }
@@ -27,6 +30,7 @@ final class AuthController extends Controller
     {
         if (Auth::attempt($loginRequest->only('email', 'password'))) {
             return response()->json([
+                'user' => new UserResource(Auth::user()),
                 'token' => auth()->user()->createToken('auth_token')->plainTextToken,
             ]);
         }
